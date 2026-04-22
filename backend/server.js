@@ -121,6 +121,36 @@ io.on('connection', async (socket) => {
     }
   });
 
+  // Handle marking messages as read
+  socket.on('mark_read', async ({ messageIds }) => {
+    try {
+      await Message.updateMany(
+        { _id: { $in: messageIds } },
+        { $set: { isRead: true } }
+      );
+      
+      // Need to tell the sender(s) that their messages were read.
+      // Easiest is to fetch the messages to group by sender, but since logic typically sends batches per chat,
+      // we assume they're generally from the same sender (from individual active chat rendering loop).
+      const messages = await Message.find({ _id: { $in: messageIds } });
+      const sendersToNotify = new Set();
+      
+      messages.forEach(m => {
+        sendersToNotify.add(String(m.sender));
+      });
+
+      sendersToNotify.forEach(senderId => {
+        const senderSocketId = userSocketMap.get(senderId);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit('messages_read', { messageIds, readerId: userId });
+        }
+      });
+      
+    } catch(err) {
+      console.error('Error marking read:', err);
+    }
+  });
+
   // Handle disconnect
   socket.on('disconnect', async () => {
     userSocketMap.delete(userId);

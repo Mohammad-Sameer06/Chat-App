@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { LogOut, Settings, Trash2 } from 'lucide-react';
 
-export default function Sidebar({ contacts, activeContact, setActiveContact, onlineUsers, handleRemoveContact }) {
+export default function Sidebar({ contacts, activeContact, setActiveContact, onlineUsers, handleRemoveContact, unreadCounts }) {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -72,6 +72,11 @@ export default function Sidebar({ contacts, activeContact, setActiveContact, onl
                   {isOnline ? 'Online' : 'Offline'}
                 </p>
               </div>
+              {unreadCounts && unreadCounts[contact._id] > 0 && (
+                <div className="unread-badge">
+                  {unreadCounts[contact._id]}
+                </div>
+              )}
               <button 
                 className="remove-btn"
                 onClick={(e) => {

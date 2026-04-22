@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Check, CheckCheck } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ChatArea({ activeContact, messages, sendMessage, sendTyping, isTyping }) {
@@ -72,8 +72,11 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
           return (
             <div key={msg._id || index} className={`message ${isMine ? 'sent' : 'received'}`}>
               <p>{msg.content}</p>
-              <div className="message-time">
+              <div className="message-time" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                 {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {isMine && (
+                  msg.isRead ? <CheckCheck size={14} color="#60a5fa" /> : <Check size={14} />
+                )}
               </div>
             </div>
           );

@@ -18,11 +18,14 @@ export default function ChatDashboard() {
     setMessages, 
     sendMessage, 
     sendTyping, 
+    markMessagesRead,
     onlineUsers,
     setOnlineUsers,
     typingUsers,
-    contactRefreshToggle
-  } = useChat(user);
+    contactRefreshToggle,
+    unreadCounts,
+    setUnreadCounts
+  } = useChat(user, activeContact?._id);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -98,6 +101,40 @@ export default function ChatDashboard() {
     );
   });
 
+  // Track unread messages from the activeContact rendered on screen
+  useEffect(() => {
+    if (!activeContact) return;
+    
+    // Find messages in the filtered sequence that specifically were sent BY the activeContact,
+    // received BY the currentUser, and are NOT yet read.
+    const unreadIds = activeMessages
+      .filter(msg => !msg.isRead && String(msg.sender?._id || msg.sender) === String(activeContact._id))
+      .map(msg => String(msg._id));
+
+    if (unreadIds.length > 0) {
+      markMessagesRead(unreadIds);
+      // Immediately reflect them as locally read so we don't spam the server
+      setMessages(prev => prev.map(m => {
+        if (unreadIds.includes(String(m._id))) {
+          return { ...m, isRead: true };
+        }
+        return m;
+      }));
+    }
+  }, [activeMessages, activeContact, markMessagesRead, setMessages]);
+
+  // Clear unread badge in sidebar when clicking a contact natively
+  useEffect(() => {
+    if (activeContact) {
+      setUnreadCounts(prev => {
+        if (!prev[activeContact._id]) return prev;
+        const next = { ...prev };
+        delete next[activeContact._id];
+        return next;
+      });
+    }
+  }, [activeContact, setUnreadCounts]);
+
   const isTyping = activeContact && typingUsers.has(activeContact._id);
 
   return (
@@ -109,6 +146,7 @@ export default function ChatDashboard() {
           setActiveContact={setActiveContact} 
           onlineUsers={onlineUsers} 
           handleRemoveContact={handleRemoveContact}
+          unreadCounts={unreadCounts}
         />
         <form className="add-contact-form" onSubmit={handleAddContact}>
           <input 

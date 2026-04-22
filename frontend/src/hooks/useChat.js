@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { api } from '../context/AuthContext';
 
 const URL = 'http://localhost:5000';
 
-export const useChat = (user) => {
+export const useChat = (user, activeContact) => {
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [contactRefreshToggle, setContactRefreshToggle] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -16,12 +18,28 @@ export const useChat = (user) => {
     const s = io(URL, { withCredentials: true });
     setSocket(s);
 
+    const fetchUnread = async () => {
+      try {
+        const res = await api.get('/messages/unread');
+        setUnreadCounts(res.data);
+      } catch(err) {}
+    };
+    fetchUnread();
+
     s.on('receive_message', (msg) => {
       setMessages(prev => {
         // Prevent duplicate messages if echoed to sender
         if (prev.some(m => m._id === msg._id)) return prev;
         return [...prev, msg];
       });
+
+      const senderId = String(typeof msg.sender === 'object' ? msg.sender?._id : msg.sender);
+      if (senderId !== activeContact) {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [senderId]: (prev[senderId] || 0) + 1
+        }));
+      }
     });
 
     s.on('update_status', ({ userId, isOnline }) => {
@@ -50,6 +68,15 @@ export const useChat = (user) => {
       setContactRefreshToggle(p => !p);
     });
 
+    s.on('messages_read', ({ messageIds }) => {
+      setMessages(prev => prev.map(msg => {
+        if (messageIds.includes(String(msg._id))) {
+          return { ...msg, isRead: true };
+        }
+        return msg;
+      }));
+    });
+
     return () => s.disconnect();
   }, [user]);
 
@@ -65,15 +92,24 @@ export const useChat = (user) => {
     }
   };
 
+  const markMessagesRead = (messageIds) => {
+    if (socket && messageIds.length > 0) {
+      socket.emit('mark_read', { messageIds });
+    }
+  };
+
   return { 
     socket, 
     messages, 
     setMessages, 
     sendMessage, 
     sendTyping, 
+    markMessagesRead,
     onlineUsers, 
     setOnlineUsers,
     typingUsers,
-    contactRefreshToggle
+    contactRefreshToggle,
+    unreadCounts,
+    setUnreadCounts
   };
 };
