@@ -92,7 +92,7 @@ export default function VideoCallOverlay({ rtc }) {
             ref={remoteVideoRef} 
             className="webrtc-remote-vid"
           />
-          <div className={`webrtc-local-vid-container ${showControls ? '' : 'hidden'}`}>
+          <div className="webrtc-local-vid-container">
             <video 
               playsInline 
               autoPlay 
