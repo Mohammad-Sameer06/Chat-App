@@ -151,6 +151,35 @@ io.on('connection', async (socket) => {
     }
   });
 
+  // WebRTC Signaling
+  socket.on('call_user', ({ userToCall, signalData, from, name }) => {
+    const receiverSocketId = userSocketMap.get(String(userToCall));
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('call_user', { signal: signalData, from, name });
+    }
+  });
+
+  socket.on('answer_call', ({ to, signal }) => {
+    const callerSocketId = userSocketMap.get(String(to));
+    if (callerSocketId) {
+      io.to(callerSocketId).emit('call_accepted', signal);
+    }
+  });
+
+  socket.on('ice_candidate', ({ to, candidate }) => {
+    const targetSocketId = userSocketMap.get(String(to));
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('ice_candidate', candidate);
+    }
+  });
+
+  socket.on('end_call', ({ to }) => {
+    const targetSocketId = userSocketMap.get(String(to));
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('end_call');
+    }
+  });
+
   // Handle disconnect
   socket.on('disconnect', async () => {
     userSocketMap.delete(userId);

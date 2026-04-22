@@ -211,6 +211,143 @@ input:focus {
   margin-right: 4px;
 }
 
+/* WebRTC Video Call Overlay */
+.webrtc-overlay-fs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.webrtc-incoming-dialog {
+  background: var(--color-slate-800);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: white;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dialog-controls {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.btn-accept {
+  background-color: #22c55e;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+.btn-accept:hover { background-color: #16a34a; }
+
+.btn-reject {
+  background-color: #ef4444;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+.btn-reject:hover { background-color: #dc2626; }
+
+.webrtc-active-call {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webrtc-remote-vid {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.webrtc-local-vid-container {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  width: 240px;
+  height: 160px;
+  background: black;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--color-slate-700);
+}
+
+.webrtc-local-vid {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.webrtc-toolbar {
+  position: absolute;
+  bottom: 3rem;
+  display: flex;
+  gap: 1.5rem;
+  background: rgba(30, 41, 59, 0.8);
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+}
+
+.toolbar-btn {
+  background: var(--color-slate-600);
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.toolbar-btn:hover {
+  background: var(--color-slate-500);
+}
+
+.toolbar-btn.disabled {
+  background: #ef4444;
+}
+
+.toolbar-btn.hangup {
+  background: #ef4444;
+}
+.toolbar-btn.hangup:hover {
+  background: #dc2626;
+}
+
 /* Avatars */
 .avatar {
   width: 48px;

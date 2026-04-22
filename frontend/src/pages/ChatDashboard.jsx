@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatArea from '../components/ChatArea';
+import VideoCallOverlay from '../components/VideoCallOverlay';
 import { AuthContext, api } from '../context/AuthContext';
 import { useChat } from '../hooks/useChat';
+import { useWebRTC } from '../hooks/useWebRTC';
 
 export default function ChatDashboard() {
   const { user } = useContext(AuthContext);
@@ -26,6 +28,8 @@ export default function ChatDashboard() {
     unreadCounts,
     setUnreadCounts
   } = useChat(user, activeContact?._id);
+
+  const rtc = useWebRTC(socket, user?.id);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -168,8 +172,10 @@ export default function ChatDashboard() {
           sendMessage={sendMessage}
           sendTyping={sendTyping}
           isTyping={isTyping}
+          startVideoCall={() => rtc.startCall(activeContact._id, user.username)}
         />
       </div>
+      <VideoCallOverlay rtc={rtc} />
     </div>
   );
 }

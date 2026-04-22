@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Send, Check, CheckCheck } from 'lucide-react';
+import { Send, Check, CheckCheck, Video } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
-export default function ChatArea({ activeContact, messages, sendMessage, sendTyping, isTyping }) {
+export default function ChatArea({ activeContact, messages, sendMessage, sendTyping, isTyping, startVideoCall }) {
   const { user } = useContext(AuthContext);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
@@ -62,6 +62,11 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
         <div className="chat-header-info">
           <h3>{activeContact.username}</h3>
           <p>{isTyping ? 'Typing...' : ''}</p>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <button onClick={startVideoCall} style={{ background: 'transparent', color: '#64748b' }} title="Video Call">
+            <Video size={24} />
+          </button>
         </div>
       </div>
       
