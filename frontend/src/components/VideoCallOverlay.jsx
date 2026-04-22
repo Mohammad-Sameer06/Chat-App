@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Phone, PhoneOff, MicOff, Mic, VideoOff, Video } from 'lucide-react';
 
 export default function VideoCallOverlay({ rtc }) {
