@@ -16,14 +16,45 @@ export default function VideoCallOverlay({ rtc }) {
 
   const [isMuted, setIsMuted] = useState(false);
   const [isCamOff, setIsCamOff] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    let interval = null;
+    if (callState === 'ACTIVE') {
+      setCallDuration(0);
+      interval = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      setCallDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [callState]);
+
+  const handleMouseMove = () => {
+    if (callState !== 'ACTIVE') return;
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+  };
 
   if (callState === 'IDLE') return null;
 
   const handleMute = () => setIsMuted(toggleMute());
   const handleCam = () => setIsCamOff(toggleCamera());
 
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   return (
-    <div className="webrtc-overlay-fs">
+    <div className="webrtc-overlay-fs" onMouseMove={handleMouseMove}>
       {callState === 'RINGING' && incomingCallData && (
         <div className="webrtc-incoming-dialog">
           <div className="pulse-ring">
@@ -61,7 +92,7 @@ export default function VideoCallOverlay({ rtc }) {
             ref={remoteVideoRef} 
             className="webrtc-remote-vid"
           />
-          <div className="webrtc-local-vid-container">
+          <div className={`webrtc-local-vid-container ${showControls ? '' : 'hidden'}`}>
             <video 
               playsInline 
               autoPlay 
@@ -71,7 +102,8 @@ export default function VideoCallOverlay({ rtc }) {
             />
           </div>
           
-          <div className="webrtc-toolbar">
+          <div className={`webrtc-toolbar ${showControls ? '' : 'hidden'}`}>
+            <div className="call-timer">{formatTime(callDuration)}</div>
             <button onClick={handleMute} className={`toolbar-btn ${isMuted ? 'disabled' : ''}`}>
                {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
             </button>
