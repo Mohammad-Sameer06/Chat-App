@@ -52,9 +52,9 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
   return (
     <div className="chat-area">
       <div className="chat-header">
-        <div className="avatar avatar-small" style={{ overflow: 'hidden' }}>
+        <div className="avatar avatar-small">
           {activeContact.avatar ? (
-            <img src={activeContact.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" />
+            <img src={activeContact.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="Avatar" />
           ) : (
             getInitials(activeContact.username)
           )}

@@ -15,9 +15,9 @@ export default function Sidebar({ contacts, activeContact, setActiveContact, onl
     <div className="sidebar">
       <div className="sidebar-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div className="avatar avatar-small" style={{ overflow: 'hidden' }}>
+          <div className="avatar avatar-small">
             {user?.avatar ? (
-              <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" />
+              <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="Avatar" />
             ) : (
               getInitials(user?.username)
             )}
@@ -58,9 +58,9 @@ export default function Sidebar({ contacts, activeContact, setActiveContact, onl
               className={`contact-item ${isActive ? 'active' : ''}`}
               onClick={() => setActiveContact(contact)}
             >
-              <div className="avatar" style={{ overflow: 'hidden' }}>
+              <div className="avatar">
                 {contact.avatar ? (
-                  <img src={contact.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" />
+                  <img src={contact.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="Avatar" />
                 ) : (
                   getInitials(contact.username)
                 )}

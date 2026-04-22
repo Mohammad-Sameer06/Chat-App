@@ -69,11 +69,11 @@ export default function Profile() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
           <div 
             className="avatar" 
-            style={{ width: '120px', height: '120px', fontSize: '2.5rem', cursor: 'pointer', overflow: 'hidden' }}
+            style={{ width: '120px', height: '120px', fontSize: '2.5rem', cursor: 'pointer' }}
             onClick={() => fileInputRef.current.click()}
           >
             {avatar ? (
-              <img src={avatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={avatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
             ) : (
               getInitials(user?.username)
             )}
