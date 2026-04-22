@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Send, Check, CheckCheck, Video, Paperclip, Mic, Square, FileText, Download, X } from 'lucide-react';
+import { Send, Check, CheckCheck, Video, Paperclip, Mic, Square, FileText, Download, X, Reply } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ChatArea({ activeContact, messages, sendMessage, sendTyping, isTyping, startVideoCall }) {
@@ -11,6 +11,7 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [replyMsg, setReplyMsg] = useState(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,8 +32,9 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
   const handleSend = (e) => {
     if (e) e.preventDefault();
     if (!input.trim()) return;
-    sendMessage(activeContact._id, input);
+    sendMessage(activeContact._id, input, 'text', '', '', replyMsg?._id);
     setInput('');
+    setReplyMsg(null);
     sendTyping(activeContact._id, false);
     if (typingTimeout.current) clearTimeout(typingTimeout.current);
   };
@@ -53,7 +55,8 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
-          sendMessage(activeContact._id, '', 'audio', reader.result);
+          sendMessage(activeContact._id, '', 'audio', reader.result, '', replyMsg?._id);
+          setReplyMsg(null);
         };
         stream.getTracks().forEach(track => track.stop());
       };
@@ -88,7 +91,8 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = () => {
-      sendMessage(activeContact._id, file.name, type, reader.result, file.name);
+      sendMessage(activeContact._id, file.name, type, reader.result, file.name, replyMsg?._id);
+      setReplyMsg(null);
       e.target.value = ''; // Reset input
     };
   };
@@ -131,10 +135,27 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
           // sender can be populated object or raw ID string from socket
           const isMine = msg.sender === user?.id || msg.sender?._id === user?.id; 
           return (
-            <div key={msg._id || index} className={`message ${isMine ? 'sent' : 'received'}`}>
-              {msg.type === 'image' && (
-                <div style={{ marginBottom: msg.content ? '0.5rem' : '0' }}>
-                  <img 
+            <div key={msg._id || index} className={`message-wrapper ${isMine ? 'mine' : 'theirs'}`}>
+              
+              {!isMine && (
+                <button className="reply-btn-hover" onClick={() => setReplyMsg(msg)}>
+                  <Reply size={18} />
+                </button>
+              )}
+
+              <div className={`message ${isMine ? 'sent' : 'received'}`}>
+                {msg.replyTo && (
+                  <div className="replied-snippet">
+                    <div className="replied-bar" />
+                    <div className="replied-content">
+                      <p className="replied-text">{msg.replyTo.content || msg.replyTo.fileName || 'Media Attachment'}</p>
+                    </div>
+                  </div>
+                )}
+
+                {msg.type === 'image' && (
+                  <div style={{ marginBottom: msg.content ? '0.5rem' : '0' }}>
+                    <img 
                     src={msg.fileData} 
                     style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'pointer', maxHeight: '300px', objectFit: 'cover' }} 
                     alt={msg.fileName || 'Attachment'} 
@@ -162,6 +183,14 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
                 )}
               </div>
             </div>
+
+            {isMine && (
+              <button className="reply-btn-hover right" onClick={() => setReplyMsg(msg)}>
+                <Reply size={18} />
+              </button>
+            )}
+
+            </div>
           );
         })}
         {isTyping && (
@@ -174,8 +203,21 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="chat-input-container">
-        <input 
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {replyMsg && (
+          <div className="reply-context-banner">
+            <div className="reply-context-info">
+              <span className="reply-label">
+                Replying to {replyMsg.sender === user?.id || replyMsg.sender?._id === user?.id ? 'yourself' : 'message'}
+              </span>
+              <p className="reply-preview">{replyMsg.content || replyMsg.fileName || 'Media attachment'}</p>
+            </div>
+            <button onClick={() => setReplyMsg(null)} className="btn-close-reply"><X size={18} /></button>
+          </div>
+        )}
+
+        <div className="chat-input-container" style={{ borderTop: replyMsg ? 'none' : '1px solid var(--color-slate-200)' }}>
+          <input 
           type="file" 
           ref={fileInputRef} 
           style={{ display: 'none' }} 
@@ -214,6 +256,7 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
             </button>
           )}
         </form>
+        </div>
       </div>
 
       {selectedImage && (

@@ -45,7 +45,9 @@ router.get('/:userId', authMiddleware, async (req, res) => {
         { sender: currentUserId, receiver: otherUserId },
         { sender: otherUserId, receiver: currentUserId }
       ]
-    }).sort({ createdAt: 1 });
+    })
+    .populate('replyTo')
+    .sort({ createdAt: 1 });
 
     res.json(messages);
   } catch (err) {

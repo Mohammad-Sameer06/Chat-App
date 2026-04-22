@@ -88,7 +88,7 @@ io.on('connection', async (socket) => {
 
   // Handle incoming messages
   socket.on('send_message', async (payload) => {
-    const { receiverId, content, type, fileData, fileName } = payload;
+    const { receiverId, content, type, fileData, fileName, replyTo } = payload;
     
     try {
       // Save to database
@@ -98,11 +98,14 @@ io.on('connection', async (socket) => {
         content: content || '',
         type: type || 'text',
         fileData: fileData || '',
-        fileName: fileName || ''
+        fileName: fileName || '',
+        replyTo: replyTo || null
       });
       await message.save();
 
-      const populatedMessage = await Message.findById(message._id).populate('sender', 'username avatar');
+      const populatedMessage = await Message.findById(message._id)
+        .populate('sender', 'username avatar')
+        .populate('replyTo');
 
       // Check if receiver is online
       const receiverSocketId = userSocketMap.get(String(receiverId));

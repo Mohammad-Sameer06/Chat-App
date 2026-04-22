@@ -25,6 +25,11 @@ const MessageSchema = new mongoose.Schema({
   fileName: {
     type: String
   },
+  replyTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message',
+    default: null
+  },
   isRead: {
     type: Boolean,
     default: false,
