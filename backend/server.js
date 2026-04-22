@@ -17,6 +17,7 @@ const server = http.createServer(app);
 const userSocketMap = new Map();
 
 const io = new Server(server, {
+  maxHttpBufferSize: 1e7, // 10MB payload capacity for Media strings
   cors: {
     origin: 'http://localhost:5173', // Vite default dev server
     methods: ['GET', 'POST'],
@@ -87,14 +88,17 @@ io.on('connection', async (socket) => {
 
   // Handle incoming messages
   socket.on('send_message', async (payload) => {
-    const { receiverId, content } = payload;
+    const { receiverId, content, type, fileData, fileName } = payload;
     
     try {
       // Save to database
       const message = new Message({
         sender: userId,
         receiver: receiverId,
-        content
+        content: content || '',
+        type: type || 'text',
+        fileData: fileData || '',
+        fileName: fileName || ''
       });
       await message.save();
 

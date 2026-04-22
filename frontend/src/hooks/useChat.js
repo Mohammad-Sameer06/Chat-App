@@ -80,9 +80,9 @@ export const useChat = (user, activeContact) => {
     return () => s.disconnect();
   }, [user]);
 
-  const sendMessage = (receiverId, content) => {
+  const sendMessage = (receiverId, content, type = 'text', fileData = '', fileName = '') => {
     if (socket) {
-      socket.emit('send_message', { receiverId, content });
+      socket.emit('send_message', { receiverId, content, type, fileData, fileName });
     }
   };
 

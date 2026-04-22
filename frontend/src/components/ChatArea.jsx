@@ -1,40 +1,95 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Send, Check, CheckCheck, Video } from 'lucide-react';
+import { Send, Check, CheckCheck, Video, Paperclip, Mic, Square, FileText } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ChatArea({ activeContact, messages, sendMessage, sendTyping, isTyping, startVideoCall }) {
   const { user } = useContext(AuthContext);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  let typingTimeout = useRef(null);
   const handleInputChange = (e) => {
     setInput(e.target.value);
     
+    // Typing indicator logic
     sendTyping(activeContact._id, true);
-    
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
+    if (typingTimeout.current) clearTimeout(typingTimeout.current);
+    typingTimeout.current = setTimeout(() => {
       sendTyping(activeContact._id, false);
     }, 2000);
   };
 
   const handleSend = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!input.trim()) return;
-    
     sendMessage(activeContact._id, input);
     setInput('');
     sendTyping(activeContact._id, false);
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    if (typingTimeout.current) clearTimeout(typingTimeout.current);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          sendMessage(activeContact._id, '', 'audio', reader.result);
+        };
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      alert("Failed to access microphone natively.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Attachment is too large! Strictly capped at 10MB limit.");
+      e.target.value = '';
+      return;
+    }
+
+    const isImage = file.type.startsWith('image/');
+    const type = isImage ? 'image' : 'file';
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      sendMessage(activeContact._id, file.name, type, reader.result, file.name);
+      e.target.value = ''; // Reset input
+    };
   };
 
   if (!activeContact) {
@@ -76,7 +131,24 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
           const isMine = msg.sender === user?.id || msg.sender?._id === user?.id; 
           return (
             <div key={msg._id || index} className={`message ${isMine ? 'sent' : 'received'}`}>
-              <p>{msg.content}</p>
+              {msg.type === 'image' && (
+                <div style={{ marginBottom: msg.content ? '0.5rem' : '0' }}>
+                  <img src={msg.fileData} style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'pointer' }} alt={msg.fileName || 'Attachment'} />
+                </div>
+              )}
+              {msg.type === 'audio' && (
+                <div style={{ marginBottom: '0.25rem' }}>
+                  <audio controls src={msg.fileData} style={{ maxWidth: '240px', height: '40px' }} />
+                </div>
+              )}
+              {msg.type === 'file' && (
+                <div style={{ padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileText size={20} />
+                  <a href={msg.fileData} download={msg.fileName} style={{ color: 'inherit', textDecoration: 'underline' }}>{msg.fileName}</a>
+                </div>
+              )}
+
+              {msg.content && <p>{msg.content}</p>}
               <div className="message-time" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                 {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 {isMine && (
@@ -96,17 +168,47 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="chat-input-container" onSubmit={handleSend}>
+      <div className="chat-input-container">
         <input 
-          type="text" 
-          placeholder="Type a message..." 
-          value={input}
-          onChange={handleInputChange}
+          type="file" 
+          ref={fileInputRef} 
+          style={{ display: 'none' }} 
+          onChange={handleFileUpload}
         />
-        <button type="submit" className="btn-icon" disabled={!input.trim()}>
-          <Send size={20} />
+        <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-icon" style={{ background: 'transparent', color: '#64748b' }}>
+          <Paperclip size={24} />
         </button>
-      </form>
+
+        <form onSubmit={handleSend} style={{ flex: 1, display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {isRecording ? (
+            <div style={{ flex: 1, padding: '0.5rem 1.5rem', background: '#ffe4e6', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: '500' }}>
+              <div className="pulse-dot" style={{ width: '10px', height: '10px', backgroundColor: '#e11d48', borderRadius: '50%' }} />
+              Recording Voice Note...
+            </div>
+          ) : (
+            <input 
+              type="text" 
+              placeholder="Type a message..." 
+              value={input}
+              onChange={handleInputChange}
+            />
+          )}
+
+          {isRecording ? (
+            <button type="button" onClick={stopRecording} className="btn-icon" style={{ background: '#e11d48' }}>
+               <Square size={18} fill="currentColor" />
+            </button>
+          ) : input.trim() ? (
+            <button type="submit" className="btn-icon">
+              <Send size={20} />
+            </button>
+          ) : (
+            <button type="button" onClick={startRecording} className="btn-icon" style={{ background: 'var(--color-primary)' }}>
+              <Mic size={20} />
+            </button>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
