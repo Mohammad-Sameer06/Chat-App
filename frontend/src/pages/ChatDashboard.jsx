@@ -5,6 +5,7 @@ import VideoCallOverlay from '../components/VideoCallOverlay';
 import { AuthContext, api } from '../context/AuthContext';
 import { useChat } from '../hooks/useChat';
 import { useWebRTC } from '../hooks/useWebRTC';
+import { Plus, X } from 'lucide-react';
 
 export default function ChatDashboard() {
   const { user } = useContext(AuthContext);
@@ -13,6 +14,7 @@ export default function ChatDashboard() {
   const [newContactId, setNewContactId] = useState('');
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   
   const { 
     socket, 
@@ -58,6 +60,7 @@ export default function ChatDashboard() {
       const res = await api.post('/users/add', { contactId: newContactId.trim() });
       setContacts(res.data); // Refresh contacts list
       setNewContactId('');
+      setIsAddFormOpen(false); // Close modal on success
     } catch (err) {
       setAddError(err.response?.data?.message || 'Failed to add contact');
     } finally {
@@ -152,18 +155,31 @@ export default function ChatDashboard() {
           handleRemoveContact={handleRemoveContact}
           unreadCounts={unreadCounts}
         />
-        <form className="add-contact-form" onSubmit={handleAddContact}>
-          <input 
-            type="text" 
-            placeholder="Enter User ID..." 
-            value={newContactId}
-            onChange={(e) => setNewContactId(e.target.value)}
-          />
-          <button type="submit" className="btn-small" disabled={addLoading}>
-            {addLoading ? '...' : 'Add'}
+        <div className="floating-add-container">
+          {isAddFormOpen && (
+            <div className="floating-form">
+              <form onSubmit={handleAddContact}>
+                <input 
+                  type="text" 
+                  placeholder="Enter User ID..." 
+                  value={newContactId}
+                  onChange={(e) => setNewContactId(e.target.value)}
+                  autoFocus
+                />
+                <button type="submit" className="btn-small" disabled={addLoading}>
+                  {addLoading ? '...' : 'Add'}
+                </button>
+                <button type="button" onClick={() => setIsAddFormOpen(false)} className="btn-close-form">
+                  <X size={16} />
+                </button>
+              </form>
+              {addError && <p style={{color: '#ef4444', fontSize: '0.75rem', marginTop: '0.5rem'}}>{addError}</p>}
+            </div>
+          )}
+          <button className="fab-add" onClick={() => setIsAddFormOpen(!isAddFormOpen)}>
+            {isAddFormOpen ? <X size={24} /> : <Plus size={24} />}
           </button>
-        </form>
-        {addError && <p style={{color: '#ef4444', fontSize: '0.75rem', padding: '0 1.5rem', marginTop: '-0.5rem'}}>{addError}</p>}
+        </div>
       </div>
       <div style={{ flex: 1, display: 'flex' }}>
         <ChatArea 
