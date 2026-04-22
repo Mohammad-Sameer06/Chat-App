@@ -197,7 +197,7 @@ input:focus {
 }
 
 .unread-badge {
-  background-color: #ef4444;
+  background-color: #3b82f6;
   color: white;
   min-width: 20px;
   height: 20px;
