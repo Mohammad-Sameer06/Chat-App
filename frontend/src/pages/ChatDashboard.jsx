@@ -8,6 +8,9 @@ export default function ChatDashboard() {
   const { user } = useContext(AuthContext);
   const [contacts, setContacts] = useState([]);
   const [activeContact, setActiveContact] = useState(null);
+  const [newContactId, setNewContactId] = useState('');
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState('');
   
   const { 
     socket, 
@@ -17,7 +20,8 @@ export default function ChatDashboard() {
     sendTyping, 
     onlineUsers,
     setOnlineUsers,
-    typingUsers 
+    typingUsers,
+    contactRefreshToggle
   } = useChat(user);
 
   useEffect(() => {
@@ -36,7 +40,38 @@ export default function ChatDashboard() {
       }
     };
     fetchContacts();
-  }, [setOnlineUsers]);
+  }, [setOnlineUsers, contactRefreshToggle]);
+
+  const handleAddContact = async (e) => {
+    e.preventDefault();
+    if (!newContactId.trim()) return;
+    setAddLoading(true);
+    setAddError('');
+    try {
+      const res = await api.post('/users/add', { contactId: newContactId.trim() });
+      setContacts(res.data); // Refresh contacts list
+      setNewContactId('');
+    } catch (err) {
+      setAddError(err.response?.data?.message || 'Failed to add contact');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const handleRemoveContact = async (shortId) => {
+    if (!window.confirm("Are you sure you want to remove this contact?")) return;
+    
+    try {
+      const res = await api.post('/users/remove', { contactId: shortId });
+      setContacts(res.data);
+      if (activeContact?.shortId === shortId) {
+        setActiveContact(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to remove contact");
+    }
+  };
 
   // When active contact changes, fetch history
   useEffect(() => {
@@ -54,12 +89,12 @@ export default function ChatDashboard() {
 
   const activeMessages = messages.filter(msg => {
     if (!activeContact) return false;
-    const msgSenderId = typeof msg.sender === 'object' ? msg.sender?._id : msg.sender;
-    const msgReceiverId = typeof msg.receiver === 'object' ? msg.receiver?._id : msg.receiver;
+    const msgSenderId = String(typeof msg.sender === 'object' ? msg.sender?._id : msg.sender);
+    const msgReceiverId = String(typeof msg.receiver === 'object' ? msg.receiver?._id : msg.receiver);
     
     return (
-      (msgSenderId === activeContact._id && msgReceiverId === user?.id) ||
-      (msgSenderId === user?.id && msgReceiverId === activeContact._id)
+      (msgSenderId === String(activeContact._id) && msgReceiverId === String(user?.id)) ||
+      (msgSenderId === String(user?.id) && msgReceiverId === String(activeContact._id))
     );
   });
 
@@ -67,12 +102,27 @@ export default function ChatDashboard() {
 
   return (
     <div className="dashboard-container">
-      <Sidebar 
-        contacts={contacts} 
-        activeContact={activeContact} 
-        setActiveContact={setActiveContact} 
-        onlineUsers={onlineUsers} 
-      />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <Sidebar 
+          contacts={contacts} 
+          activeContact={activeContact} 
+          setActiveContact={setActiveContact} 
+          onlineUsers={onlineUsers} 
+          handleRemoveContact={handleRemoveContact}
+        />
+        <form className="add-contact-form" onSubmit={handleAddContact}>
+          <input 
+            type="text" 
+            placeholder="Enter User ID..." 
+            value={newContactId}
+            onChange={(e) => setNewContactId(e.target.value)}
+          />
+          <button type="submit" className="btn-small" disabled={addLoading}>
+            {addLoading ? '...' : 'Add'}
+          </button>
+        </form>
+        {addError && <p style={{color: '#ef4444', fontSize: '0.75rem', padding: '0 1.5rem', marginTop: '-0.5rem'}}>{addError}</p>}
+      </div>
       <div style={{ flex: 1, display: 'flex' }}>
         <ChatArea 
           activeContact={activeContact} 

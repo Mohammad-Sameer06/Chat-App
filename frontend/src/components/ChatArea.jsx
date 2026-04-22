@@ -52,14 +52,16 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
   return (
     <div className="chat-area">
       <div className="chat-header">
-        <div className="avatar avatar-small">
-          {getInitials(activeContact.username)}
+        <div className="avatar avatar-small" style={{ overflow: 'hidden' }}>
+          {activeContact.avatar ? (
+            <img src={activeContact.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" />
+          ) : (
+            getInitials(activeContact.username)
+          )}
         </div>
         <div className="chat-header-info">
           <h3>{activeContact.username}</h3>
-          <div style={{ height: '20px' }}>
-            {isTyping ? <p className="typing-indicator">Typing...</p> : null}
-          </div>
+          <p>{isTyping ? 'Typing...' : ''}</p>
         </div>
       </div>
       
@@ -76,6 +78,13 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
             </div>
           );
         })}
+        {isTyping && (
+          <div className="typing-bubble">
+            <div className="typing-dot"></div>
+            <div className="typing-dot"></div>
+            <div className="typing-dot"></div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

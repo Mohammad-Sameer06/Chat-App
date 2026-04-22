@@ -24,11 +24,15 @@ const io = new Server(server, {
   }
 });
 
+// Bind to app for access in routes
+app.set('io', io);
+app.set('userSocketMap', userSocketMap);
+
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 // Connect to MongoDB
@@ -40,6 +44,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chatapp')
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/profile', require('./routes/profile'));
 
 // Socket.io Middleware for Auth
 io.use((socket, next) => {
@@ -71,7 +76,7 @@ io.use((socket, next) => {
 
 // Socket.io Events
 io.on('connection', async (socket) => {
-  const userId = socket.user.id;
+  const userId = String(socket.user.id);
   userSocketMap.set(userId, socket.id);
   
   // Mark user as online
@@ -96,7 +101,7 @@ io.on('connection', async (socket) => {
       const populatedMessage = await Message.findById(message._id).populate('sender', 'username avatar');
 
       // Check if receiver is online
-      const receiverSocketId = userSocketMap.get(receiverId);
+      const receiverSocketId = userSocketMap.get(String(receiverId));
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('receive_message', populatedMessage);
       }
@@ -110,7 +115,7 @@ io.on('connection', async (socket) => {
 
   // Handle typing status
   socket.on('typing', ({ receiverId, isTyping }) => {
-    const receiverSocketId = userSocketMap.get(receiverId);
+    const receiverSocketId = userSocketMap.get(String(receiverId));
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('typing', { senderId: userId, isTyping });
     }

@@ -8,6 +8,7 @@ export const useChat = (user) => {
   const [messages, setMessages] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState(new Set());
+  const [contactRefreshToggle, setContactRefreshToggle] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +42,14 @@ export const useChat = (user) => {
       });
     });
 
+    s.on('contact_added', () => {
+      setContactRefreshToggle(p => !p);
+    });
+
+    s.on('contact_removed', () => {
+      setContactRefreshToggle(p => !p);
+    });
+
     return () => s.disconnect();
   }, [user]);
 
@@ -64,6 +73,7 @@ export const useChat = (user) => {
     sendTyping, 
     onlineUsers, 
     setOnlineUsers,
-    typingUsers 
+    typingUsers,
+    contactRefreshToggle
   };
 };

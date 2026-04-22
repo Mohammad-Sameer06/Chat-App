@@ -22,10 +22,19 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  shortId: {
+    type: String,
+    unique: true,
+    default: () => Math.random().toString(36).substring(2, 8).toUpperCase()
+  },
   isOnline: {
     type: Boolean,
     default: false,
-  }
+  },
+  contacts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

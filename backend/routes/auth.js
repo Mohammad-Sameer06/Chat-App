@@ -26,7 +26,7 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    const payload = { id: user.id, username: user.username };
+    const payload = { id: user.id, username: user.username, shortId: user.shortId };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.cookie('token', token, {
@@ -36,7 +36,7 @@ router.post('/register', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    res.status(201).json({ user: { id: user.id, username: user.username, email: user.email, avatar: user.avatar } });
+    res.status(201).json({ user: { id: user.id, username: user.username, email: user.email, avatar: user.avatar, shortId: user.shortId } });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const payload = { id: user.id, username: user.username };
+    const payload = { id: user.id, username: user.username, shortId: user.shortId };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.cookie('token', token, {
@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ user: { id: user.id, username: user.username, email: user.email, avatar: user.avatar } });
+    res.json({ user: { id: user.id, username: user.username, email: user.email, avatar: user.avatar, shortId: user.shortId } });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
