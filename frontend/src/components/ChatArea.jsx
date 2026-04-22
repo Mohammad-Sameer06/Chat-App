@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Send, Check, CheckCheck, Video, Paperclip, Mic, Square, FileText } from 'lucide-react';
+import { Send, Check, CheckCheck, Video, Paperclip, Mic, Square, FileText, Download, X } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ChatArea({ activeContact, messages, sendMessage, sendTyping, isTyping, startVideoCall }) {
@@ -10,6 +10,7 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,7 +134,12 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
             <div key={msg._id || index} className={`message ${isMine ? 'sent' : 'received'}`}>
               {msg.type === 'image' && (
                 <div style={{ marginBottom: msg.content ? '0.5rem' : '0' }}>
-                  <img src={msg.fileData} style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'pointer' }} alt={msg.fileName || 'Attachment'} />
+                  <img 
+                    src={msg.fileData} 
+                    style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'pointer', maxHeight: '300px', objectFit: 'cover' }} 
+                    alt={msg.fileName || 'Attachment'} 
+                    onClick={() => setSelectedImage({ src: msg.fileData, name: msg.fileName })}
+                  />
                 </div>
               )}
               {msg.type === 'audio' && (
@@ -209,6 +215,23 @@ export default function ChatArea({ activeContact, messages, sendMessage, sendTyp
           )}
         </form>
       </div>
+
+      {selectedImage && (
+        <div className="lightbox-overlay" onClick={() => setSelectedImage(null)}>
+          <button className="lightbox-close" onClick={() => setSelectedImage(null)}>
+            <X size={28} />
+          </button>
+          <a href={selectedImage.src} download={selectedImage.name || 'image'} className="lightbox-download" onClick={e => e.stopPropagation()}>
+            <Download size={28} />
+          </a>
+          <img 
+            src={selectedImage.src} 
+            onClick={e => e.stopPropagation()} 
+            className="lightbox-img" 
+            alt="Expanded view" 
+          />
+        </div>
+      )}
     </div>
   );
 }
